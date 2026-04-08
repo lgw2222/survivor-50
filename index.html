@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Survivor 50 Fantasy</title>
+  <style>
+    :root{
+      --panel:#171b22;
+      --panel2:#1d232d;
+      --text:#f4efe2;
+      --muted:#c9bfa8;
+      --vatu:#1aa3d8;
+      --kalo:#ef8b2c;
+      --sila:#3a9b45;
+      --danger:#c95a5a;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:
+      radial-gradient(circle at top, rgba(214,168,74,.12), transparent 25%),
+      linear-gradient(180deg, #121722 0%, #0b0e13 100%);}
+    .wrap{max-width:1500px;margin:0 auto;padding:18px}
+    .hero{background:linear-gradient(135deg, rgba(214,168,74,.16), rgba(125,154,91,.12)), var(--panel);
+      border:2px solid #5d4924;border-radius:22px;padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+    .hero:before,.hero:after{content:"🔥";position:absolute;top:16px;font-size:26px;opacity:.9;}
+    .hero:before{left:18px}.hero:after{right:18px}
+    h1{margin:0 0 6px;text-align:center;font-size:34px;letter-spacing:.5px}
+    .sub{margin:0;text-align:center;color:var(--muted)}
+    .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0 0;}
+    .nav button,.btn,select,input{border-radius:12px;border:1px solid #6d5325;background:var(--panel2);color:var(--text);padding:10px 14px;font-size:14px}
+    .nav button{cursor:pointer;font-weight:700}
+    .nav button.active{background:linear-gradient(180deg,#6d5325,#4f3c1b);border-color:#d6a84a}
+    .section{margin-top:18px;background:rgba(23,27,34,.95);border:2px solid #45381f;border-radius:22px;box-shadow:var(--shadow);padding:16px;display:none}
+    .section.active{display:block}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:#555}
+    .vatu{background:var(--vatu)} .kalo{background:var(--kalo)} .sila{background:var(--sila)} .eliminated{background:var(--danger)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), #151922;border:1px solid #514121;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+    .player-photo{width:100%;aspect-ratio:4/5;object-fit:cover;background:#111}
+    .card-body{padding:12px}.card h3{margin:0 0 8px;font-size:18px}.mini{color:var(--muted);font-size:13px}
+    .table-wrap{overflow:auto;border:1px solid #43351d;border-radius:16px}
+    table{width:100%;border-collapse:collapse;min-width:900px;background:#141821}
+    th,td{padding:10px 9px;border-bottom:1px solid #2b313c;text-align:left;font-size:14px}
+    th{position:sticky;top:0;background:#232a35;color:#f7ebce;z-index:1}
+    tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+    .loading,.error{padding:14px;border-radius:14px;background:#1e2430;border:1px solid #4a3820;color:var(--muted)}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+    .stat{background:#181d26;border:1px solid #49391e;border-radius:16px;padding:14px}
+    .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.7px}.stat .value{font-size:24px;font-weight:800;margin-top:6px}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+    .modal.show{display:flex}
+    .modal-card{width:min(1100px,100%);max-height:92vh;overflow:auto;background:#141922;border:2px solid #6f5727;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+    .modal-top{display:grid;grid-template-columns:280px 1fr;gap:18px;padding:18px}
+    .modal-photo{width:100%;border-radius:18px;object-fit:cover;aspect-ratio:4/5;background:#0d1016}
+    .modal h2{margin:0 0 8px}.close{cursor:pointer;float:right;font-size:24px;background:none;border:none;color:#fff}
+    .bio{color:#ddd3bf;line-height:1.45}.clickable{color:#90d8ff;cursor:pointer;text-decoration:underline}.footer-note{margin-top:12px;color:var(--muted);font-size:12px}
+    @media (max-width: 800px){.modal-top{grid-template-columns:1fr}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Survivor 50 Fantasy</h1>
+      <p class="sub">Torch-lit standings, weekly scores, player breakdowns, and clickable profiles synced from Google Sheets.</p>
+      <div class="nav">
+        <button class="tab-btn active" data-tab="standings">🏆 Standings</button>
+        <button class="tab-btn" data-tab="weekly">📅 Weekly Scores</button>
+        <button class="tab-btn" data-tab="breakdown">📊 Breakdown</button>
+        <button class="tab-btn" data-tab="players">👤 Players</button>
+      </div>
+    </div>
+
+    <section id="standings" class="section active">
+      <div class="toolbar"><button class="btn" id="refreshBtn">Refresh Sheet</button></div>
+      <div id="standingsContent" class="loading">Loading standings…</div>
+    </section>
+
+    <section id="weekly" class="section">
+      <div class="toolbar">
+        <label>Week <select id="weekSelect"></select></label>
+        <input id="weeklySearch" placeholder="Search player..." />
+      </div>
+      <div id="weeklyContent" class="loading">Loading weekly scores…</div>
+    </section>
+
+    <section id="breakdown" class="section">
+      <div class="toolbar"><label>Player <select id="breakdownPlayer"></select></label></div>
+      <div id="breakdownContent" class="loading">Loading breakdown…</div>
+    </section>
+
+    <section id="players" class="section">
+      <div class="toolbar"><input id="playerSearch" placeholder="Search players..." /></div>
+      <div id="playersContent" class="loading">Loading players…</div>
+    </section>
+
+    <p class="footer-note">If your data does not load, publish the workbook to the web and make sure the tabs are publicly viewable.</p>
+  </div>
+
+  <div id="playerModal" class="modal">
+    <div class="modal-card">
+      <div style="padding:14px 18px 0"><button class="close" id="closeModal">✕</button></div>
+      <div id="modalInner"></div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      publishedKey: '2PACX-1vQhW7J79VFgHWtF6OWoRT_CS2X2x7P2BYbsi1gHPq07BPayWxJYA8m6WavQMxOlruzBRp_dUQqAUqX-',
+      sheets: { teamScores:'Team Scores', weekly:'Weekly Player Scores', breakdown:'Points Breakdown', players:'Players' }
+    };
+
+    const PLAYER_INFO = {
+      'Q': { image:'https://placehold.co/400x500?text=Q', bio:'Aggressive strategist with a loud presence and big-game energy.' },
+      'Angelina Keeley': { image:'https://placehold.co/400x500?text=Angelina', bio:'Bold negotiator who makes every move feel like a pitch and a performance.' },
+      'Aubry Bracco': { image:'https://placehold.co/400x500?text=Aubry', bio:'Thoughtful tactician with a sharp read on shifting alliances.' },
+      'Benjamin "Coach" Wade': { image:'https://placehold.co/400x500?text=Coach', bio:'Mythic storyteller whose confidence and chaos are always close by.' },
+      'Charlie Davis': { image:'https://placehold.co/400x500?text=Charlie', bio:'Smart, social, and calculated with a modern strategic game.' },
+      'Christian Hubicki': { image:'https://placehold.co/400x500?text=Christian', bio:'Brilliant narrator and puzzle-minded player with a lovable underdog vibe.' },
+      'Chrissy Hofbeck': { image:'https://placehold.co/400x500?text=Chrissy', bio:'Competitive and composed, with a knack for clutch moments.' },
+      'Cirie Fields': { image:'https://placehold.co/400x500?text=Cirie', bio:'Legendary social master whose reads and timing can change any game.' },
+      'Colby Donaldson': { image:'https://placehold.co/400x500?text=Colby', bio:'Classic challenge threat and old-school Survivor icon.' },
+      'Dee Valladares': { image:'https://placehold.co/400x500?text=Dee', bio:'Confident modern winner with a blend of charm and control.' },
+      'Emily Flippen': { image:'https://placehold.co/400x500?text=Emily', bio:'Analytical and blunt, with a growth arc and sharp strategic instincts.' },
+      'Genevieve Mushaluk': { image:'https://placehold.co/400x500?text=Genevieve', bio:'Steady, strategic, and hard to pin down.' },
+      'Jenna Lewis-Dougherty': { image:'https://placehold.co/400x500?text=Jenna', bio:'Original-era Survivor personality with competitive roots.' },
+      'Joe Hunter': { image:'https://placehold.co/400x500?text=Joe', bio:'Physical presence with a straight-ahead challenge-driven style.' },
+      'Jonathan Young': { image:'https://placehold.co/400x500?text=Jonathan', bio:'Elite physical force who can dominate team portions of the game.' },
+      'Kamilla Karthigesu': { image:'https://placehold.co/400x500?text=Kamilla', bio:'Underrated player with a calm presence and subtle upside.' },
+      'Kyle Fraser': { image:'https://placehold.co/400x500?text=Kyle', bio:'Competitor with upside, now eliminated from the season.' },
+      'Mike White': { image:'https://placehold.co/400x500?text=Mike+White', bio:'Clever social operator with humor, awareness, and endgame skill.' },
+      'Ozzy Lusth': { image:'https://placehold.co/400x500?text=Ozzy', bio:'Iconic survivalist and challenge beast with instant star power.' },
+      'Rick Devens': { image:'https://placehold.co/400x500?text=Rick', bio:'Big-character player who mixes spectacle, hustle, and resilience.' },
+      'Rizo Velovic': { image:'https://placehold.co/400x500?text=Rizo', bio:'Unpredictable presence with room for breakout moments.' },
+      'Savannah Louie': { image:'https://placehold.co/400x500?text=Savannah', bio:'Early-season player now eliminated from the season.' },
+      'Stephenie LaGrossa Kendrick': { image:'https://placehold.co/400x500?text=Stephenie', bio:'Fierce competitor and old-school fan favorite with grit.' },
+      'Tiffany Nicole Ervin': { image:'https://placehold.co/400x500?text=Tiffany', bio:'Modern social player with upside in a fluid cast.' }
+    };
+
+    const state = { teamScores:[], weekly:[], breakdown:[], players:[] };
+    const $ = (sel) => document.querySelector(sel);
+    const fmt = (v) => Number(v || 0).toFixed(0);
+
+    function tribeClass(value=''){
+      const v = String(value).toUpperCase();
+      if (v.includes('VATU')) return 'vatu';
+      if (v.includes('KALO')) return 'kalo';
+      if (v.includes('SILA')) return 'sila';
+      if (v.includes('ELIM')) return 'eliminated';
+      return '';
+    }
+
+    async function fetchSheet(sheetName){
+      const url = `https://docs.google.com/spreadsheets/d/e/${CONFIG.publishedKey}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&headers=1&tqx=out:json`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      const cols = json.table.cols.map(c => c.label || c.id || '');
+      return json.table.rows.map(row => {
+        const obj = {};
+        cols.forEach((col, idx) => obj[col] = row.c[idx] ? row.c[idx].v : '');
+        return obj;
+      });
+    }
+
+    async function loadAll(){
+      try{
+        $('#standingsContent').innerHTML = 'Loading standings…';
+        $('#weeklyContent').innerHTML = 'Loading weekly scores…';
+        $('#breakdownContent').innerHTML = 'Loading breakdown…';
+        $('#playersContent').innerHTML = 'Loading players…';
+
+        const [teamScores, weekly, breakdown, players] = await Promise.all([
+          fetchSheet(CONFIG.sheets.teamScores),
+          fetchSheet(CONFIG.sheets.weekly),
+          fetchSheet(CONFIG.sheets.breakdown),
+          fetchSheet(CONFIG.sheets.players)
+        ]);
+
+        state.teamScores = teamScores;
+        state.weekly = weekly;
+        state.breakdown = breakdown;
+        state.players = players;
+
+        initControls();
+        renderStandings();
+        renderWeekly();
+        renderBreakdown();
+        renderPlayers();
+      }catch(err){
+        const msg = `<div class="error">Could not load sheet data. Double-check the published sheet key and tab names. Error: ${String(err.message || err)}</div>`;
+        $('#standingsContent').innerHTML = msg;
+        $('#weeklyContent').innerHTML = msg;
+        $('#breakdownContent').innerHTML = msg;
+        $('#playersContent').innerHTML = msg;
+      }
+    }
+
+    function initControls(){
+      const weeks = [...new Set(state.weekly.map(r => String(r.Week || '')).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+      $('#weekSelect').innerHTML = weeks.map(w => `<option value="${w}">Week ${w}</option>`).join('');
+      const players = [...new Set(state.breakdown.map(r => r.Player).filter(Boolean))].sort();
+      $('#breakdownPlayer').innerHTML = players.map(p => `<option value="${p}">${p}</option>`).join('');
+    }
+
+    function renderStandings(){
+      const rows = state.teamScores.filter(r => String(r.Team || '').trim());
+      const totalKey = Object.keys(rows[0] || {}).find(k => /season total|total points|cumulative/i.test(k)) || 'Season Total';
+      const latest = [...rows].sort((a,b)=> Number(b[totalKey]||0)-Number(a[totalKey]||0));
+      const top = latest[0] || {};
+      $('#standingsContent').innerHTML = `
+        <div class="stats">
+          <div class="stat"><div class="label">Leading Team</div><div class="value">${top.Team || '—'}</div></div>
+          <div class="stat"><div class="label">Top Score</div><div class="value">${fmt(top[totalKey])}</div></div>
+          <div class="stat"><div class="label">Teams Tracked</div><div class="value">${latest.length}</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${Object.keys(rows[0] || {}).map(k => `<th>${k}</th>`).join('')}</tr></thead>
+            <tbody>${latest.map(r => `<tr>${Object.keys(rows[0] || {}).map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderWeekly(){
+      const selectedWeek = $('#weekSelect').value;
+      const q = $('#weeklySearch').value.trim().toLowerCase();
+      let rows = state.weekly.filter(r => String(r.Week) === String(selectedWeek));
+      if (q) rows = rows.filter(r => String(r.Player || '').toLowerCase().includes(q));
+      const headers = Object.keys(rows[0] || state.weekly[0] || {});
+      $('#weeklyContent').innerHTML = rows.length ? `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r => `<tr>${headers.map(h => {
+              if (h === 'Player') return `<td><span class="clickable" onclick='openPlayerModal(${JSON.stringify(r[h])})'>${r[h] ?? ''}</span></td>`;
+              if (h === 'Show Tribe') return `<td><span class="pill ${tribeClass(r[h])}">${r[h] ?? ''}</span></td>`;
+              return `<td>${r[h] ?? ''}</td>`;
+            }).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>` : '<div class="loading">No rows for that week.</div>';
+    }
+
+    function renderBreakdown(){
+      const player = $('#breakdownPlayer').value;
+      const rows = state.breakdown.filter(r => r.Player === player);
+      const headers = Object.keys(rows[0] || state.breakdown[0] || {});
+      $('#breakdownContent').innerHTML = rows.length ? `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>` : '<div class="loading">No breakdown available.</div>';
+    }
+
+    function currentPlayerRows(player){ return state.weekly.filter(r => r.Player === player); }
+    function currentTribe(player){ const rows = currentPlayerRows(player).sort((a,b)=>Number(b.Week||0)-Number(a.Week||0)); return rows[0]?.['Show Tribe'] || ''; }
+    function currentTeam(player){ const rows = currentPlayerRows(player).sort((a,b)=>Number(b.Week||0)-Number(a.Week||0)); return rows[0]?.Team || ''; }
+    function playerTotal(player){ return currentPlayerRows(player).reduce((sum, r) => sum + Number(r['Weekly Points'] || 0), 0); }
+
+    function renderPlayers(){
+      const q = $('#playerSearch').value.trim().toLowerCase();
+      const playerNames = [...new Set(state.weekly.map(r => r.Player).filter(Boolean))].sort();
+      const filtered = q ? playerNames.filter(p => p.toLowerCase().includes(q)) : playerNames;
+      $('#playersContent').innerHTML = `<div class="grid">${filtered.map(name => {
+        const info = PLAYER_INFO[name] || { image:`https://placehold.co/400x500?text=${encodeURIComponent(name)}`, bio:'Bio placeholder. Edit inside PLAYER_INFO.' };
+        const tribe = currentTribe(name);
+        return `<div class="card">
+          <img class="player-photo" src="${info.image}" alt="${name}" onerror="this.src='https://placehold.co/400x500?text=${encodeURIComponent(name)}'">
+          <div class="card-body">
+            <h3><span class="clickable" onclick='openPlayerModal(${JSON.stringify(name)})'>${name}</span></h3>
+            <div class="mini">Team: ${currentTeam(name) || '—'}</div>
+            <div class="mini" style="margin:6px 0"><span class="pill ${tribeClass(tribe)}">${tribe || '—'}</span></div>
+            <div class="mini">Total Points: ${fmt(playerTotal(name))}</div>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    window.openPlayerModal = function(name){
+      const info = PLAYER_INFO[name] || { image:`https://placehold.co/400x500?text=${encodeURIComponent(name)}`, bio:'Bio placeholder. Edit inside PLAYER_INFO.' };
+      const tribe = currentTribe(name), team = currentTeam(name), total = playerTotal(name);
+      const breakdownRows = state.breakdown.filter(r => r.Player === name);
+      const headers = Object.keys(breakdownRows[0] || {});
+      $('#modalInner').innerHTML = `<div class="modal-top">
+        <div><img class="modal-photo" src="${info.image}" alt="${name}" onerror="this.src='https://placehold.co/400x500?text=${encodeURIComponent(name)}'"></div>
+        <div>
+          <h2>${name}</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <span class="pill ${tribeClass(tribe)}">${tribe || 'No tribe found'}</span>
+            <span class="pill">Team: ${team || '—'}</span>
+            <span class="pill">Total: ${fmt(total)}</span>
+          </div>
+          <p class="bio">${info.bio}</p>
+          <div class="table-wrap" style="margin-top:14px">
+            <table>
+              <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+              <tbody>${breakdownRows.map(r => `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+      $('#playerModal').classList.add('show');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    }));
+
+    $('#refreshBtn').addEventListener('click', loadAll);
+    $('#weekSelect').addEventListener('change', renderWeekly);
+    $('#weeklySearch').addEventListener('input', renderWeekly);
+    $('#breakdownPlayer').addEventListener('change', renderBreakdown);
+    $('#playerSearch').addEventListener('input', renderPlayers);
+    $('#closeModal').addEventListener('click', () => $('#playerModal').classList.remove('show'));
+    $('#playerModal').addEventListener('click', (e) => { if (e.target.id === 'playerModal') $('#playerModal').classList.remove('show'); });
+
+    loadAll();
+  </script>
+</body>
+</html>
